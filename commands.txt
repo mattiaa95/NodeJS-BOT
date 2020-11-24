@@ -37,12 +37,18 @@ send { "method":"GET", "resource":"/candles/1/m1", "params": { "num":1, "from":1
 send { "method":"GET", "resource":"/candles/1/d1", "params": { "num":1, "from":1515024000, "to":1516752000 } }
 send { "method":"GET", "resource":"/candles/1/d1", "params": { "num":1, "from":1515456000, "to":1517529600 } }
 
+
+
+
 --- Live Prices module ---
 load {"filename":"liveprices.js"}
 
 price_subscribe {"pairs":"EUR/USD"}
+price_subscribe {"pairs":"TSLA.us"}
 price_subscribe {"pairs":["GBP/USD","USD/JPY"]}
 price_unsubscribe {"pairs":["EUR/USD","GBP/USD","USD/JPY"]}
+
+
 
 --- Trading Tables module ---
 load {"filename":"tradingtables.js"}

@@ -33,6 +33,7 @@ var priceUpdate = (update) => {
 			return element.toFixed(5);
 		});
 		console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates}`);
+		
 	} catch (e) {
 		console.log('price update JSON parse error: ', e);
 		return;
