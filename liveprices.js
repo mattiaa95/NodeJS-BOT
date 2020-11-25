@@ -2,11 +2,10 @@
 // begin setup CLI
 //
 
-var closes = []
-const SMA = require('technicalindicators').SMA;
-var MACD = require('technicalindicators').MACD;
-var RSI = require('technicalindicators').RSI;
+var buy = []
+var sell = []
 
+var MACD = require('technicalindicators').MACD;
 
 var setupCLI = () => {
 	cli.on('price_subscribe', (params) => {
@@ -122,59 +121,51 @@ exports.init = (c, s) => {
 // end module boilerplate
 //
 
-
-
 ///MainProcess update scubscription
 
 function ProcessDataOnUpdate(jsonData) {
-	/*
-	JavaScript floating point arithmetic is not accurate, so we need to round rates to 5 digits
-	Be aware that .toFixed returns a String
-
-	jsonData.Rates = jsonData.Rates.map(function (element) {
-		return (parseFloat(element).toPrecision(12));
-	});
-
-	return element.toFixed(5);
-	{
-		Updated: 1606325180223,
-		Rates: [
-		  1.19132,
-		  1.1914399999999998,
-		  1.1930399999999999,
-		  1.1881300000000001
-		],
-		Symbol: 'EUR/USD'
-	  }
-	 */
 	jsonData.Rates = jsonData.Rates.map(function (element) {
 		return element.toFixed(7);
 	});
-	let averangePrice = ((parseFloat(jsonData.Rates[0]) + parseFloat(jsonData.Rates[1])) / 2);
-	closes.push(averangePrice);
 
-	if (closes.length < 120) {
-		console.log("Recolecting data Wait... " + closes.length);
+	sell.push(parseFloat(jsonData.Rates[0]));
+	buy.push(parseFloat(jsonData.Rates[1]));
+
+	if (buy.length < 120) {
+		console.log("Recolecting data Wait... " + buy.length);
 	} else {
-		closes.shift();
-		var resultSMA = SMA.calculate({period : 10, values : closes})
-		var resultRSI = RSI.calculate({period : 5, values : closes})
-
-		var resultMACD = MACD.calculate({
-			values            : closes,
-			fastPeriod        : 5,
-			slowPeriod        : 8,
-			signalPeriod      : 3 ,
-			SimpleMAOscillator: false,
-			SimpleMASignal    : false
-		  });
-
-		console.log("SMA: " + resultSMA[resultSMA.length - 1])
-		console.log("RSI: " + resultRSI[resultRSI.length - 1])
-		console.log("MACD: " + resultMACD[resultMACD.length - 1].MACD + "Histogram: " + resultMACD[resultMACD.length - 1].histogram + "Signal: " + resultMACD[resultMACD.length - 1].signal)
-
+		sell.shift();
+		buy.shift();
+		
+		IndicatorsSell();
+		IndicatorsBuy();
 	}
+	console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates}`);
 
-	console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates} Averange price: ${averangePrice}`);
+}
 
+function IndicatorsSell() {
+	let resultMACD = MACD.calculate({
+		values: sell,
+		fastPeriod: 9,
+		slowPeriod: 20,
+		signalPeriod: 3,
+		SimpleMAOscillator: false,
+		SimpleMASignal: false
+	});
+
+	console.log("MACD sell: " + resultMACD[resultMACD.length - 1].MACD + " Histogram: " + resultMACD[resultMACD.length - 1].histogram + " Signal: " + resultMACD[resultMACD.length - 1].signal);
+}
+
+function IndicatorsBuy() {
+	let resultMACD = MACD.calculate({
+		values: buy,
+		fastPeriod: 9,
+		slowPeriod: 20,
+		signalPeriod: 3,
+		SimpleMAOscillator: false,
+		SimpleMASignal: false
+	});
+
+	console.log("MACD buy: " + resultMACD[resultMACD.length - 1].MACD + " Histogram: " + resultMACD[resultMACD.length - 1].histogram + " Signal: " + resultMACD[resultMACD.length - 1].signal);
 }
