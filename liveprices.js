@@ -1,7 +1,13 @@
 //
 // begin setup CLI
 //
+
 var closes = []
+const SMA = require('technicalindicators').SMA;
+var MACD = require('technicalindicators').MACD;
+var RSI = require('technicalindicators').RSI;
+
+
 var setupCLI = () => {
 	cli.on('price_subscribe', (params) => {
 		if(typeof(params.pairs) === 'undefined') {
@@ -28,21 +34,7 @@ var setupCLI = () => {
 var priceUpdate = (update) => {
 	try {
 		var jsonData = JSON.parse(update);
-		// JavaScript floating point arithmetic is not accurate, so we need to round rates to 5 digits
-		// Be aware that .toFixed returns a String
-		jsonData.Rates = jsonData.Rates.map(function(element){
-			return element.toFixed(5);
-		});
-		let averangePrice = ((parseFloat(jsonData.Rates[0])+parseFloat(jsonData.Rates[1]))/2)
-		console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates} Averange price: ${averangePrice}`);
-
-		closes.push(averangePrice)
-
-		if (closes.length < 30) {
-			console.log("Recolecting data Wait... ")
-		} else {
-			closes.shift()
-		}
+		ProcessDataOnUpdate(jsonData);
 		
 	} catch (e) {
 		console.log('price update JSON parse error: ', e);
@@ -125,6 +117,64 @@ exports.init = (c, s) => {
 	}
 	initdone = true;
 }
+
 //
 // end module boilerplate
 //
+
+
+
+///MainProcess update scubscription
+
+function ProcessDataOnUpdate(jsonData) {
+	/*
+	JavaScript floating point arithmetic is not accurate, so we need to round rates to 5 digits
+	Be aware that .toFixed returns a String
+
+	jsonData.Rates = jsonData.Rates.map(function (element) {
+		return (parseFloat(element).toPrecision(12));
+	});
+
+	return element.toFixed(5);
+	{
+		Updated: 1606325180223,
+		Rates: [
+		  1.19132,
+		  1.1914399999999998,
+		  1.1930399999999999,
+		  1.1881300000000001
+		],
+		Symbol: 'EUR/USD'
+	  }
+	 */
+	jsonData.Rates = jsonData.Rates.map(function (element) {
+		return element.toFixed(7);
+	});
+	let averangePrice = ((parseFloat(jsonData.Rates[0]) + parseFloat(jsonData.Rates[1])) / 2);
+	closes.push(averangePrice);
+
+	if (closes.length < 120) {
+		console.log("Recolecting data Wait... ");
+	} else {
+		closes.shift();
+		var resultSMA = SMA.calculate({period : 10, values : closes})
+		var resultRSI = RSI.calculate({period : 5, values : closes})
+
+		var resultMACD = MACD.calculate({
+			values            : closes,
+			fastPeriod        : 5,
+			slowPeriod        : 8,
+			signalPeriod      : 3 ,
+			SimpleMAOscillator: false,
+			SimpleMASignal    : false
+		  });
+
+		console.log("SMA: " + resultSMA[resultSMA.length - 1])
+		console.log("RSI: " + resultRSI[resultRSI.length - 1])
+		console.log("MACD: " + resultMACD[resultMACD.length - 1])
+
+	}
+
+	console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates} Averange price: ${averangePrice}`);
+
+}
