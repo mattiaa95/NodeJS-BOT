@@ -1,6 +1,7 @@
 //
 // begin setup CLI
 //
+var closes = []
 var setupCLI = () => {
 	cli.on('price_subscribe', (params) => {
 		if(typeof(params.pairs) === 'undefined') {
@@ -32,7 +33,16 @@ var priceUpdate = (update) => {
 		jsonData.Rates = jsonData.Rates.map(function(element){
 			return element.toFixed(5);
 		});
-		console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates}`);
+		let averangePrice = ((parseFloat(jsonData.Rates[0])+parseFloat(jsonData.Rates[1]))/2)
+		console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates} Averange price: ${averangePrice}`);
+
+		closes.push(averangePrice)
+
+		if (closes.length < 30) {
+			console.log("Recolecting data Wait... ")
+		} else {
+			closes.shift()
+		}
 		
 	} catch (e) {
 		console.log('price update JSON parse error: ', e);

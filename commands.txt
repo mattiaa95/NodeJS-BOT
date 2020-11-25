@@ -39,7 +39,6 @@ send { "method":"GET", "resource":"/candles/1/d1", "params": { "num":1, "from":1
 
 
 
-
 --- Live Prices module ---
 load {"filename":"liveprices.js"}
 

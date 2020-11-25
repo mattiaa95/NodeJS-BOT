@@ -4,7 +4,8 @@
 	"description": "FXCM RESTful API client example for node.js",
 	"main": "client5.js",
 	"dependencies": {
-		"socket.io-client": "^1.7.3"
+		"socket.io-client": "^1.7.3",
+		"technicalindicators": "^3.1.0"
 	},
 	"devDependencies": {},
 	"scripts": {
