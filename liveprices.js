@@ -1,11 +1,10 @@
 //
 // begin setup CLI
 //
-
-var buy = []
-var sell = []
-
-var MACD = require('technicalindicators').MACD;
+const MACD = require('technicalindicators').MACD;
+const TICKSave = 120;
+var close = []
+var main = require('./main.js');
 
 var setupCLI = () => {
 	cli.on('price_subscribe', (params) => {
@@ -33,8 +32,7 @@ var setupCLI = () => {
 var priceUpdate = (update) => {
 	try {
 		var jsonData = JSON.parse(update);
-		ProcessDataOnUpdate(jsonData);
-		
+		ProcessDataOnUpdate(jsonData)
 	} catch (e) {
 		console.log('price update JSON parse error: ', e);
 		return;
@@ -116,6 +114,9 @@ exports.init = (c, s) => {
 	}
 	initdone = true;
 }
+//
+// end module boilerplate
+//
 
 //
 // end module boilerplate
@@ -123,30 +124,33 @@ exports.init = (c, s) => {
 
 ///MainProcess update scubscription
 
+
+///MainProcess update scubscription
 function ProcessDataOnUpdate(jsonData) {
+
 	jsonData.Rates = jsonData.Rates.map(function (element) {
 		return element.toFixed(7);
 	});
 
-	sell.push(parseFloat(jsonData.Rates[0]));
-	buy.push(parseFloat(jsonData.Rates[1]));
+	let averangePrice = ((parseFloat(jsonData.Rates[0]) + parseFloat(jsonData.Rates[1])) / 2);
 
-	if (buy.length < 120) {
-		console.log("Recolecting data Wait... " + buy.length);
+	close.push(averangePrice);
+
+	if (close.length < TICKSave) {
+		console.log("Recolecting data Wait... " + close.length);
 	} else {
-		sell.shift();
-		buy.shift();
-		
-		IndicatorsSell();
-		IndicatorsBuy();
+		close.shift();
+		Indicator();
 	}
+
 	console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates}`);
 
 }
 
-function IndicatorsSell() {
+function Indicator() {
+
 	let resultMACD = MACD.calculate({
-		values: sell,
+		values: close,
 		fastPeriod: 9,
 		slowPeriod: 20,
 		signalPeriod: 3,
@@ -154,18 +158,37 @@ function IndicatorsSell() {
 		SimpleMASignal: false
 	});
 
-	console.log("MACD sell: " + resultMACD[resultMACD.length - 1].MACD + " Histogram: " + resultMACD[resultMACD.length - 1].histogram + " Signal: " + resultMACD[resultMACD.length - 1].signal);
+	if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
+		request_processor("POST","/trading/open_trade",{ 
+			"account_id": main.config.accountID, 
+			"symbol": "EUR/USD", 
+			"is_buy":false,
+			"at_market": 0,
+			"order_type": "AtMarket",
+			"stop": 30,
+			"limit": 60,
+			"is_in_pips":true,
+			"amount":1,
+			"time_in_force":"GTC" })
+	} else {
+		request_processor("POST","/trading/open_trade",{ 
+			"account_id": main.config.accountID, 
+			"symbol": "EUR/USD", 
+			"is_buy":true,
+			"at_market": 0,
+			"order_type": "AtMarket",
+			"stop": 30,
+			"limit": 60,
+			"is_in_pips":true,
+			"amount":1,
+			"time_in_force":"GTC" })
+	}
+	   
+	console.log("MACD: " + resultMACD[resultMACD.length - 1].MACD + " Histogram: " + resultMACD[resultMACD.length - 1].histogram + " Signal: " + resultMACD[resultMACD.length - 1].signal);
 }
 
-function IndicatorsBuy() {
-	let resultMACD = MACD.calculate({
-		values: buy,
-		fastPeriod: 9,
-		slowPeriod: 20,
-		signalPeriod: 3,
-		SimpleMAOscillator: false,
-		SimpleMASignal: false
-	});
 
-	console.log("MACD buy: " + resultMACD[resultMACD.length - 1].MACD + " Histogram: " + resultMACD[resultMACD.length - 1].histogram + " Signal: " + resultMACD[resultMACD.length - 1].signal);
-}
+
+
+
+

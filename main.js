@@ -114,7 +114,6 @@ var authenticate = (token) => {
 	socket.on('connect', () => {
 		console.log('Socket.IO session has been opened: ', socket.id);
 		request_headers.Authorization = 'Bearer ' + socket.id + token;
-		mainConnect()
 	});
 	// fired when socket.io cannot connect (network errors)
 	socket.on('connect_error', (error) => {
@@ -226,9 +225,3 @@ cli.emit('prompt');
 //
 // end Main
 //
-
-function mainConnect(){
-	var test = require("./liveprices.js");
-	test.init(cli,socket);
-	
-}
