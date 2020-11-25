@@ -154,7 +154,7 @@ function ProcessDataOnUpdate(jsonData) {
 	closes.push(averangePrice);
 
 	if (closes.length < 120) {
-		console.log("Recolecting data Wait... ");
+		console.log("Recolecting data Wait... " + closes.length);
 	} else {
 		closes.shift();
 		var resultSMA = SMA.calculate({period : 10, values : closes})
@@ -171,7 +171,7 @@ function ProcessDataOnUpdate(jsonData) {
 
 		console.log("SMA: " + resultSMA[resultSMA.length - 1])
 		console.log("RSI: " + resultRSI[resultRSI.length - 1])
-		console.log("MACD: " + resultMACD[resultMACD.length - 1])
+		console.log("MACD: " + resultMACD[resultMACD.length - 1].MACD + "Histogram: " + resultMACD[resultMACD.length - 1].histogram + "Signal: " + resultMACD[resultMACD.length - 1].signal)
 
 	}
 
