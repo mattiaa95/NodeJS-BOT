@@ -222,7 +222,7 @@ function request_processor(method, resource, params) {
 							orders = (jsonData.open_positions.length - 1)
 						}
 					} catch (e) {
-						console.log('length parse error');
+						console.log('length error: Open new Trade');
 					}
 				}
 			}
