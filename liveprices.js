@@ -148,6 +148,10 @@ function Indicator() {
 		period: 10
 	});
 
+	if(orders == MaxOrders){
+		request_processor("GET", "/trading/get_model", { "models": "OpenPosition" })
+	}
+
 	if (orders < MaxOrders) {
 		//
 		if (resultADX[resultADX.length - 1].adx >= 30 && resultADX[resultADX.length - 1].adx <= 50) {
@@ -203,33 +207,26 @@ function request_processor(method, resource, params) {
 		var data = '';
 		response.on('data', (chunk) => data += chunk); // re-assemble fragmented response data
 		response.on('end', () => {
-			try {
-				var jsonData = JSON.parse(response)
-			} catch (e) {
-				console.log('JSON parse error:', e);
-				return;
-			}
-
-			try {
-				//ORDER DONE
-				if (jsonData.orderId > 0) {
-					request_processor("GET", "/trading/get_model", { "models": "OpenPosition" })
-					console.log("orderDone: " + response.statusCode + " " + data)
+			if (response.statusCode === 200) {
+				try {
+					var jsonData = JSON.parse(data);
+				} catch (e) {
+					console.log('JSON parse error: ', e);
+					return;
 				}
-			} catch (error) {
-				console.log(error)
-			}
-
-			try {
-				//GET orders
-				if (jsonData.open_positions.length > 0) {
-					console.log("ORDERS OPEN: " + jsonData.open_positions.length)
-					orders = jsonData.open_positions.length
+				if (jsonData.response.executed) {
+					try {
+						//GET orders
+						if (jsonData.open_positions.length > 0) {
+							console.log("ORDERS OPEN: " + (jsonData.open_positions.length - 1))
+							orders = (jsonData.open_positions.length - 1)
+						}
+					} catch (e) {
+						console.log('length parse error');
+					}
 				}
-			} catch (error) {
-				console.log(error)
 			}
-
+			
 		});
 	}).on('error', (err) => {
 		console.log(err.message)
