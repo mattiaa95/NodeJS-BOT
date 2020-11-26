@@ -40,6 +40,8 @@ var request_headers = {
 	'Accept': 'application/json',
 	'Content-Type': 'application/x-www-form-urlencoded'
 }
+
+module.exports = request_headers
 //
 // end Internal variables and objects
 //
@@ -79,6 +81,7 @@ var request_processor = (method, resource, params, callback) => {
 	if (method === "GET") {
 		resource += '/?' + params;
 	}
+	
 	var req = tradinghttp.request({
 			host: trading_api_host,
 			port: trading_api_port,
@@ -186,7 +189,7 @@ cli.on('load', (params) => {
 		console.log('command error: "filename" parameter is missing.')
 	} else {
 		var test = require(`./${params.filename}`);
-		test.init(cli,socket);
+		test.init(cli,socket,request_headers);
 	}
 });
 

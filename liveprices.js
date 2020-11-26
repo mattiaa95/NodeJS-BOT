@@ -4,7 +4,15 @@
 const MACD = require('technicalindicators').MACD;
 const TICKSave = 120;
 var close = []
-var main = require('./main.js');
+var config = require('./config.js');
+
+var tradinghttp = require(config.trading_api_proto);
+
+var headers = {
+	'User-Agent': 'request',
+	'Accept': 'application/json',
+	'Content-Type': 'application/x-www-form-urlencoded'
+}
 
 var setupCLI = () => {
 	cli.on('price_subscribe', (params) => {
@@ -106,10 +114,23 @@ var socket;
 var initdone = false;
 
 // called when the module is being loaded
-exports.init = (c, s) => {
+exports.init = (c, s, h) => {
 	if (!initdone) {
 		cli = c;
 		socket = s;
+		headers = h;
+		request_processor("POST","/trading/open_trade",{ 
+			"account_id": config.accountID, 
+			"symbol": "EUR/USD", 
+			"is_buy":true,
+			"at_market": 0,
+			"order_type": "AtMarket",
+			"stop": 30,
+			"limit": 60,
+			"is_in_pips":true,
+			"amount":1,
+			"time_in_force":"GTC" })
+
 		setupCLI();
 	}
 	initdone = true;
@@ -148,7 +169,6 @@ function ProcessDataOnUpdate(jsonData) {
 }
 
 function Indicator() {
-
 	let resultMACD = MACD.calculate({
 		values: close,
 		fastPeriod: 9,
@@ -160,7 +180,7 @@ function Indicator() {
 
 	if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
 		request_processor("POST","/trading/open_trade",{ 
-			"account_id": main.config.accountID, 
+			"account_id": config.accountID, 
 			"symbol": "EUR/USD", 
 			"is_buy":false,
 			"at_market": 0,
@@ -172,7 +192,7 @@ function Indicator() {
 			"time_in_force":"GTC" })
 	} else {
 		request_processor("POST","/trading/open_trade",{ 
-			"account_id": main.config.accountID, 
+			"account_id": config.accountID, 
 			"symbol": "EUR/USD", 
 			"is_buy":true,
 			"at_market": 0,
@@ -187,39 +207,24 @@ function Indicator() {
 	console.log("MACD: " + resultMACD[resultMACD.length - 1].MACD + " Histogram: " + resultMACD[resultMACD.length - 1].histogram + " Signal: " + resultMACD[resultMACD.length - 1].signal);
 }
 
-function request_processor(method, resource, params, callback) {
-	var requestID = getNextRequestID();
-	if (typeof(callback) === 'undefined') {
-		callback = main.default_callback;
-		console.log('request #', requestID, ' sending');
-	}
-	if (typeof(method) === 'undefined') {
-		method = "GET";
-	}
-
-	// GET HTTP(S) requests have parameters encoded in URL
-	if (method === "GET") {
-		resource += '/?' + params;
-	}
+function request_processor(method, resource, params) {
 	var req = tradinghttp.request({
-			host: main.trading_api_host,
-			port: main.trading_api_port,
+			host: config.trading_api_host,
+			port: config.trading_api_port,
 			path: resource,
 			method: method,
-			headers: main.request_headers
+			headers: headers,
+			params: params
 		}, (response) => {
 			var data = '';
 			response.on('data', (chunk) => data += chunk); // re-assemble fragmented response data
 			response.on('end', () => {
-				callback(response.statusCode, requestID, data);
+				console.log("order ---- done")
 			});
 		}).on('error', (err) => {
-			callback(0, requestID, err); // this is called when network request fails
+			console.log(err.message)
 		});
 
-	// non-GET HTTP(S) reuqests pass arguments as data
-	if (method !== "GET" && typeof(params) !== 'undefined') {
-		req.write(params);
-	}
+		
 	req.end();
 };
