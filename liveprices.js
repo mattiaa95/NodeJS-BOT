@@ -3,6 +3,7 @@
 //
 const MACD = require('technicalindicators').MACD;
 const TICKSave = 120;
+const MaxOrders = 5;
 var close = []
 var orders = 0
 var config = require('./config.js');
@@ -134,7 +135,8 @@ function Indicator() {
 		SimpleMAOscillator: false,
 		SimpleMASignal: false
 	});
-	if (orders < 20) {
+
+	if (orders < MaxOrders) {
 		if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
 			request_processor("POST", "/trading/open_trade", {
 				"account_id": config.accountID,
@@ -143,8 +145,8 @@ function Indicator() {
 				"at_market": 0,
 				"order_type": "AtMarket",
 				"is_in_pips": true,
-				"stop": -6,
-				"limit": 12,
+				"stop": -5,
+				"limit": 5,
 				"amount": 10,
 				"time_in_force": "GTC"
 			})
@@ -157,8 +159,8 @@ function Indicator() {
 					"at_market": 0,
 					"order_type": "AtMarket",
 					"is_in_pips": true,
-					"stop": -6,
-					"limit": 12,
+					"stop": -5,
+					"limit": 5,
 					"amount": 10,
 					"time_in_force": "GTC"
 				})
@@ -184,23 +186,19 @@ function request_processor(method, resource, params) {
 		var data = '';
 		response.on('data', (chunk) => data += chunk); // re-assemble fragmented response data
 		response.on('end', () => {
+			console.log("Order Execute: " + response.executed)
 			if(response.executed){
 				//ORDER DONE
-				try {
 					if(data.orderId > 0){
 						request_processor("GET", "/trading/get_model" , { "models": "OpenPosition" })
 						console.log("orderDone: " + response.statusCode + " " + data)
 					}
-				} catch (error) {
-					Console.log(erro)
-				}
+	
 				//GET orders
-				try {
-					console.log("ORDERS OPEN: " + response.open_positions.length)
-					orders = response.open_positions.length
-				} catch (error) {
-					Console.log(erro)
-				}
+					if(response.open_positions.length > 0){
+						console.log("ORDERS OPEN: " + response.open_positions.length)
+						orders = response.open_positions.length
+					}
 			}
 		});
 	}).on('error', (err) => {
