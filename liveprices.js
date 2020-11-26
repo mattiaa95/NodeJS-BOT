@@ -4,6 +4,7 @@
 const MACD = require('technicalindicators').MACD;
 const TICKSave = 120;
 var close = []
+var orders = 0
 var config = require('./config.js');
 
 var tradinghttp = require(config.trading_api_proto);
@@ -17,14 +18,14 @@ var headers = {
 
 var setupCLI = () => {
 	cli.on('price_subscribe', (params) => {
-		if(typeof(params.pairs) === 'undefined') {
+		if (typeof (params.pairs) === 'undefined') {
 			console.log('command error: "pairs" parameter is missing.');
 		} else {
 			subscribe(params.pairs);
 		}
 	});
 	cli.on('price_unsubscribe', (params) => {
-		if(typeof(params.pairs) === 'undefined') {
+		if (typeof (params.pairs) === 'undefined') {
 			console.log('command error: "pairs" parameter is missing.');
 		} else {
 			unsubscribe(params.pairs);
@@ -57,9 +58,9 @@ var subscribe = (pairs) => {
 				console.log('subscribe request #', requestID, ' JSON parse error: ', e);
 				return;
 			}
-			if(jsonData.response.executed) {
+			if (jsonData.response.executed) {
 				try {
-					for(var i in jsonData.pairs) {
+					for (var i in jsonData.pairs) {
 						socket.on(jsonData.pairs[i].Symbol, priceUpdate);
 					}
 				} catch (e) {
@@ -73,7 +74,7 @@ var subscribe = (pairs) => {
 			console.log('subscribe request #', requestID, ' execution error: ', statusCode, ' : ', data);
 		}
 	}
-	cli.emit('send',{ "method":"POST", "resource":"/subscribe", "params": { "pairs":pairs }, "callback":callback })
+	cli.emit('send', { "method": "POST", "resource": "/subscribe", "params": { "pairs": pairs }, "callback": callback })
 }
 
 var unsubscribe = (pairs) => {
@@ -85,9 +86,9 @@ var unsubscribe = (pairs) => {
 				console.log('unsubscribe request #', requestID, ' JSON parse error: ', e);
 				return;
 			}
-			if(jsonData.response.executed) {
+			if (jsonData.response.executed) {
 				try {
-					for(var i in jsonData.pairs) {
+					for (var i in jsonData.pairs) {
 						socket.removeListener(jsonData.pairs[i], priceUpdate);
 					}
 				} catch (e) {
@@ -101,7 +102,7 @@ var unsubscribe = (pairs) => {
 			console.log('unsubscribe request #', requestID, ' execution error: ', statusCode, ' : ', data);
 		}
 	}
-	cli.emit('send',{ "method":"POST", "resource":"/unsubscribe", "params": { "pairs":pairs }, "callback":callback })
+	cli.emit('send', { "method": "POST", "resource": "/unsubscribe", "params": { "pairs": pairs }, "callback": callback })
 }
 //
 // end main functions
@@ -166,55 +167,68 @@ function Indicator(jsonData) {
 		SimpleMAOscillator: false,
 		SimpleMASignal: false
 	});
-
-	if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
-		request_processor("POST","/trading/open_trade",{ 
-			"account_id": config.accountID, 
-			"symbol": "EUR/USD", 
-			"is_buy": false,
-			"at_market": 0,
-			"order_type": "AtMarket",
-			"stop": (parseFloat(jsonData.Rates[0])*0.01),
-			"limit": (parseFloat(jsonData.Rates[0])-(parseFloat(jsonData.Rates[0])*0.002)),
-			"amount": 10,
-			"time_in_force":"GTC" })
-	} else {
-		request_processor("POST","/trading/open_trade",
-		{"account_id": config.accountID, 
-			"symbol": "EUR/USD", 
-			"is_buy": true,
-			"at_market": 0,
-			"order_type": "AtMarket",
-			"stop": (parseFloat(jsonData.Rates[1])-(parseFloat(jsonData.Rates[1])*0.01)),
-			"limit": (parseFloat(jsonData.Rates[1])*0.002),
-			"amount": 10,
-			"time_in_force":"GTC" })
+	if (orders < 20) {
+		if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
+			request_processor("POST", "/trading/open_trade", {
+				"account_id": config.accountID,
+				"symbol": "EUR/USD",
+				"is_buy": false,
+				"at_market": 0,
+				"order_type": "AtMarket",
+				"is_in_pips": true,
+				"stop": -60,
+				"limit": 190,
+				"amount": 10,
+				"time_in_force": "GTC"
+			})
+		} else {
+			request_processor("POST", "/trading/open_trade",
+				{
+					"account_id": config.accountID,
+					"symbol": "EUR/USD",
+					"is_buy": true,
+					"at_market": 0,
+					"order_type": "AtMarket",
+					"is_in_pips": true,
+					"stop": -60,
+					"limit": 190,
+					"amount": 10,
+					"time_in_force": "GTC"
+				})
+		}
 	}
-	   
+
 	console.log("MACD: " + resultMACD[resultMACD.length - 1].MACD + " Histogram: " + resultMACD[resultMACD.length - 1].histogram + " Signal: " + resultMACD[resultMACD.length - 1].signal);
 }
 
 function request_processor(method, resource, params) {
-	console.log(params.is_buy)
-	var req = tradinghttp.request({
-			host: config.trading_api_host,
-			port: config.trading_api_port,
-			path: resource,
-			method: method,
-			headers: headers
-			}, (response) => {
-			var data = '';
-			response.on('data', (chunk) => data += chunk); // re-assemble fragmented response data
-			response.on('end', () => {
-				console.log("orderDone: " + response.statusCode +" "+ data)
-			});
-		}).on('error', (err) => {
-			console.log(err.message)
-		});
+	// GET HTTP(S) requests have parameters encoded in URL
+	if (method === "GET") {
+		resource += '/?' + params;
+	}
 
-		if (method !== "GET" && typeof(params) !== 'undefined') {
-			req.write(querystring.stringify(params));
-		}
+	var req = tradinghttp.request({
+		host: config.trading_api_host,
+		port: config.trading_api_port,
+		path: resource,
+		method: method,
+		headers: headers
+	}, (response) => {
+		var data = '';
+		response.on('data', (chunk) => data += chunk); // re-assemble fragmented response data
+		response.on('end', () => {
+			console.log("orderDone: " + response.statusCode + " " + data)
+			if(response.executed){
+				orders++
+			}
+		});
+	}).on('error', (err) => {
+		console.log(err.message)
+	});
+
+	if (method !== "GET" && typeof (params) !== 'undefined') {
+		req.write(querystring.stringify(params));
+	}
 
 	req.end();
 };
