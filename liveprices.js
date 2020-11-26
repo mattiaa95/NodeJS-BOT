@@ -2,9 +2,12 @@
 // begin setup CLI
 //
 const MACD = require('technicalindicators').MACD;
+const ADX = require('technicalindicators').ADX;
 const TICKSave = 120;
 const MaxOrders = 5;
 var close = []
+var sell = []
+var buy = []
 var orders = 0
 var config = require('./config.js');
 
@@ -29,8 +32,6 @@ var setupCLI = () => {
 }
 //
 // end setup CLI
-
-
 //
 // begin main functions
 //
@@ -114,11 +115,15 @@ function ProcessDataOnUpdate(jsonData) {
 	let averangePrice = ((parseFloat(jsonData.Rates[0]) + parseFloat(jsonData.Rates[1])) / 2);
 
 	close.push(averangePrice);
+	sell.push(parseFloat(jsonData.Rates[0]))
+	buy.push(parseFloat(jsonData.Rates[1]))
 
 	if (close.length < TICKSave) {
 		console.log("Recolecting data Wait... " + close.length);
 	} else {
 		close.shift();
+		sell.shift();
+		buy.shift();
 		Indicator();
 	}
 
@@ -136,41 +141,53 @@ function Indicator() {
 		SimpleMASignal: false
 	});
 
+	let resultADX = ADX.calculate({
+		close: close,
+		high: buy,
+		low: sell,
+		period: 10
+	});
+
 	if (orders < MaxOrders) {
-		if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
-			request_processor("POST", "/trading/open_trade", {
-				"account_id": config.accountID,
-				"symbol": "EUR/USD",
-				"is_buy": false,
-				"at_market": 0,
-				"order_type": "AtMarket",
-				"is_in_pips": true,
-				"stop": -5,
-				"limit": 5,
-				"amount": 10,
-				"time_in_force": "GTC"
-			})
-		} else {
-			request_processor("POST", "/trading/open_trade",
-				{
+		//
+		if (resultADX[resultADX.length - 1].adx > 30) {
+			if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
+				request_processor("POST", "/trading/open_trade", {
 					"account_id": config.accountID,
 					"symbol": "EUR/USD",
-					"is_buy": true,
+					"is_buy": false,
 					"at_market": 0,
 					"order_type": "AtMarket",
 					"is_in_pips": true,
-					"stop": -5,
-					"limit": 5,
+					"stop": -0.5,
+					"limit": 1,
 					"amount": 10,
 					"time_in_force": "GTC"
 				})
+			} else {
+				request_processor("POST", "/trading/open_trade",
+					{
+						"account_id": config.accountID,
+						"symbol": "EUR/USD",
+						"is_buy": true,
+						"at_market": 0,
+						"order_type": "AtMarket",
+						"is_in_pips": true,
+						"stop": -0.5,
+						"limit": 1,
+						"amount": 10,
+						"time_in_force": "GTC"
+					})
+			}
 		}
-	}
 
+	}
+	console.log("ADX: " + resultADX[resultADX.length - 1].adx)
 	console.log("MACD: " + resultMACD[resultMACD.length - 1].MACD + " Histogram: " + resultMACD[resultMACD.length - 1].histogram + " Signal: " + resultMACD[resultMACD.length - 1].signal);
 }
 
 function request_processor(method, resource, params) {
+	orders = orders + 1
 	// GET HTTP(S) requests have parameters encoded in URL
 	if (method === "GET") {
 		resource += '/?' + querystring.stringify(params);
@@ -186,19 +203,19 @@ function request_processor(method, resource, params) {
 		var data = '';
 		response.on('data', (chunk) => data += chunk); // re-assemble fragmented response data
 		response.on('end', () => {
-			console.log("Order Execute: " + response.executed)
-			if(response.executed){
+			console.log("Order Execute: " + data)
+			if (data.executed) {
 				//ORDER DONE
-					if(data.orderId > 0){
-						request_processor("GET", "/trading/get_model" , { "models": "OpenPosition" })
-						console.log("orderDone: " + response.statusCode + " " + data)
-					}
-	
+				if (data.orderId) {
+					request_processor("GET", "/trading/get_model", { "models": "OpenPosition" })
+					console.log("orderDone: " + response.statusCode + " " + data)
+				}
+
 				//GET orders
-					if(response.open_positions.length > 0){
-						console.log("ORDERS OPEN: " + response.open_positions.length)
-						orders = response.open_positions.length
-					}
+				if (data.open_positions.length > 0) {
+					console.log("ORDERS OPEN: " + data.open_positions.length)
+					orders = data.open_positions.length
+				}
 			}
 		});
 	}).on('error', (err) => {
