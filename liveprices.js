@@ -9,6 +9,7 @@ var config = require('./config.js');
 
 var tradinghttp = require(config.trading_api_proto);
 var querystring = require('querystring');
+const { Console } = require('console');
 
 var headers = {
 	'User-Agent': 'request',
@@ -24,17 +25,10 @@ var setupCLI = () => {
 			subscribe(params.pairs);
 		}
 	});
-	cli.on('price_unsubscribe', (params) => {
-		if (typeof (params.pairs) === 'undefined') {
-			console.log('command error: "pairs" parameter is missing.');
-		} else {
-			unsubscribe(params.pairs);
-		}
-	});
 }
 //
 // end setup CLI
-//
+
 
 //
 // begin main functions
@@ -77,33 +71,6 @@ var subscribe = (pairs) => {
 	cli.emit('send', { "method": "POST", "resource": "/subscribe", "params": { "pairs": pairs }, "callback": callback })
 }
 
-var unsubscribe = (pairs) => {
-	var callback = (statusCode, requestID, data) => {
-		if (statusCode === 200) {
-			try {
-				var jsonData = JSON.parse(data);
-			} catch (e) {
-				console.log('unsubscribe request #', requestID, ' JSON parse error: ', e);
-				return;
-			}
-			if (jsonData.response.executed) {
-				try {
-					for (var i in jsonData.pairs) {
-						socket.removeListener(jsonData.pairs[i], priceUpdate);
-					}
-				} catch (e) {
-					console.log('unsubscribe request #', requestID, ' "pairs" JSON parse error: ', e);
-					return;
-				}
-			} else {
-				console.log('unsubscribe request #', requestID, ' not executed: ', jsonData);
-			}
-		} else {
-			console.log('unsubscribe request #', requestID, ' execution error: ', statusCode, ' : ', data);
-		}
-	}
-	cli.emit('send', { "method": "POST", "resource": "/unsubscribe", "params": { "pairs": pairs }, "callback": callback })
-}
 //
 // end main functions
 //
@@ -151,14 +118,14 @@ function ProcessDataOnUpdate(jsonData) {
 		console.log("Recolecting data Wait... " + close.length);
 	} else {
 		close.shift();
-		Indicator(jsonData);
+		Indicator();
 	}
 
 	console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates}`);
 
 }
 
-function Indicator(jsonData) {
+function Indicator() {
 	let resultMACD = MACD.calculate({
 		values: close,
 		fastPeriod: 9,
@@ -176,8 +143,8 @@ function Indicator(jsonData) {
 				"at_market": 0,
 				"order_type": "AtMarket",
 				"is_in_pips": true,
-				"stop": -60,
-				"limit": 190,
+				"stop": -6,
+				"limit": 12,
 				"amount": 10,
 				"time_in_force": "GTC"
 			})
@@ -190,8 +157,8 @@ function Indicator(jsonData) {
 					"at_market": 0,
 					"order_type": "AtMarket",
 					"is_in_pips": true,
-					"stop": -60,
-					"limit": 190,
+					"stop": -6,
+					"limit": 12,
 					"amount": 10,
 					"time_in_force": "GTC"
 				})
@@ -204,7 +171,7 @@ function Indicator(jsonData) {
 function request_processor(method, resource, params) {
 	// GET HTTP(S) requests have parameters encoded in URL
 	if (method === "GET") {
-		resource += '/?' + params;
+		resource += '/?' + querystring.stringify(params);
 	}
 
 	var req = tradinghttp.request({
@@ -217,9 +184,23 @@ function request_processor(method, resource, params) {
 		var data = '';
 		response.on('data', (chunk) => data += chunk); // re-assemble fragmented response data
 		response.on('end', () => {
-			console.log("orderDone: " + response.statusCode + " " + data)
 			if(response.executed){
-				orders++
+				//ORDER DONE
+				try {
+					if(data.orderId > 0){
+						request_processor("GET", "/trading/get_model" , { "models": "OpenPosition" })
+						console.log("orderDone: " + response.statusCode + " " + data)
+					}
+				} catch (error) {
+					Console.log(erro)
+				}
+				//GET orders
+				try {
+					console.log("ORDERS OPEN: " + response.open_positions.length)
+					orders = response.open_positions.length
+				} catch (error) {
+					Console.log(erro)
+				}
 			}
 		});
 	}).on('error', (err) => {
