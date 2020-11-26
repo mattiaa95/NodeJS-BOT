@@ -6,11 +6,14 @@ const ADX = require('technicalindicators').ADX;
 const RSI = require('technicalindicators').RSI;
 const TICKSave = 120;
 const MaxOrders = 5;
+
 var close = []
 var sell = []
 var buy = []
 var orders = 0
 var config = require('./config.js');
+
+var pair = ""
 
 var tradinghttp = require(config.trading_api_proto);
 var querystring = require('querystring');
@@ -71,6 +74,7 @@ var subscribe = (pairs) => {
 			console.log('subscribe request #', requestID, ' execution error: ', statusCode, ' : ', data);
 		}
 	}
+	pair = pairs
 	cli.emit('send', { "method": "POST", "resource": "/subscribe", "params": { "pairs": pairs }, "callback": callback })
 }
 
@@ -146,7 +150,7 @@ function Indicator() {
 		close: close,
 		high: buy,
 		low: sell,
-		period: 10
+		period: 5
 	});
 
 	let resultRSI = RSI.calculate({
@@ -161,11 +165,11 @@ function Indicator() {
 	if (orders < MaxOrders) {
 		//
 		if (resultRSI[resultRSI.length - 1] <= 35 && resultRSI[resultRSI.length - 1] >= 55) {
-			if (resultADX[resultADX.length - 1].adx >= 30 && resultADX[resultADX.length - 1].adx <= 45) {
+			if (resultADX[resultADX.length - 1].adx >= 27 && resultADX[resultADX.length - 1].adx <= 47) {
 				if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
 					request_processor("POST", "/trading/open_trade", {
 						"account_id": config.accountID,
-						"symbol": "EUR/USD",
+						"symbol": pair,
 						"is_buy": false,
 						"at_market": 0,
 						"order_type": "AtMarket",
@@ -179,7 +183,7 @@ function Indicator() {
 					request_processor("POST", "/trading/open_trade",
 						{
 							"account_id": config.accountID,
-							"symbol": "EUR/USD",
+							"symbol": pair,
 							"is_buy": true,
 							"at_market": 0,
 							"order_type": "AtMarket",
