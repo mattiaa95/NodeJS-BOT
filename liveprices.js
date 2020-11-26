@@ -5,7 +5,7 @@ const MACD = require('technicalindicators').MACD;
 const ADX = require('technicalindicators').ADX;
 const RSI = require('technicalindicators').RSI;
 const TICKSave = 120;
-const MaxOrders = 5;
+const MaxOrders = 10;
 
 var close = []
 var sell = []
@@ -150,12 +150,12 @@ function Indicator() {
 		close: close,
 		high: buy,
 		low: sell,
-		period: 5
+		period: 10
 	});
 
 	let resultRSI = RSI.calculate({
 		values: close,
-		period: 5
+		period: 2
 	});
 
 	if (orders == MaxOrders) {
@@ -164,8 +164,8 @@ function Indicator() {
 
 	if (orders < MaxOrders) {
 		//
-		if (resultRSI[resultRSI.length - 1] <= 35 && resultRSI[resultRSI.length - 1] >= 55) {
-			if (resultADX[resultADX.length - 1].adx >= 27 && resultADX[resultADX.length - 1].adx <= 47) {
+		if (resultRSI[resultRSI.length - 1] <= 40 && resultRSI[resultRSI.length - 1] >= 60) {
+			if (resultADX[resultADX.length - 1].adx >= 30 && resultADX[resultADX.length - 1].adx <= 45) {
 				if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
 					request_processor("POST", "/trading/open_trade", {
 						"account_id": config.accountID,
@@ -204,6 +204,7 @@ function Indicator() {
 }
 
 function request_processor(method, resource, params) {
+	console.log("Making ORDER")
 	orders = orders + 1
 	// GET HTTP(S) requests have parameters encoded in URL
 	if (method === "GET") {
