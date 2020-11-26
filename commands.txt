@@ -7,7 +7,7 @@ send { "method":"GET", "resource":"/trading/get_instruments" }
 // request a snapshot of trading tables
 send { "method":"GET", "resource":"/trading/get_model", "params": { "models":["Offer"] } }
 send { "method":"GET", "resource":"/trading/get_model", "params": { "models":["Account"] } }
-send { "method":"GET", "resource":"/trading/get_model", "params": { "models":["Offer","OpenPosition","ClosedPosition","Order","Account", "Summary","LeverageProfile","Properties"] } }
+send { "method":"GET", "resource":"/trading/get_model", "params": { "models":["ClosedPosition"] } }
 
 // update symbols subscribed to in Offers tables
 send { "method":"POST", "resource":"/trading/update_subscriptions", "params": { "symbol":"EUR/USD", "visible":true } }

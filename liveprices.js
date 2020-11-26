@@ -150,7 +150,7 @@ function Indicator() {
 
 	if (orders < MaxOrders) {
 		//
-		if (resultADX[resultADX.length - 1].adx > 30) {
+		if (resultADX[resultADX.length - 1].adx >= 30 && resultADX[resultADX.length - 1].adx <= 50) {
 			if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
 				request_processor("POST", "/trading/open_trade", {
 					"account_id": config.accountID,
@@ -159,8 +159,8 @@ function Indicator() {
 					"at_market": 0,
 					"order_type": "AtMarket",
 					"is_in_pips": true,
-					"stop": -0.5,
-					"limit": 1,
+					"stop": -1.5,
+					"limit": 2.5,
 					"amount": 10,
 					"time_in_force": "GTC"
 				})
@@ -173,8 +173,8 @@ function Indicator() {
 						"at_market": 0,
 						"order_type": "AtMarket",
 						"is_in_pips": true,
-						"stop": -0.5,
-						"limit": 1,
+						"stop": -1.5,
+						"limit": 2.5,
 						"amount": 10,
 						"time_in_force": "GTC"
 					})
@@ -203,20 +203,33 @@ function request_processor(method, resource, params) {
 		var data = '';
 		response.on('data', (chunk) => data += chunk); // re-assemble fragmented response data
 		response.on('end', () => {
-			console.log("Order Execute: " + data)
-			if (data.executed) {
+			try {
+				var jsonData = JSON.parse(response)
+			} catch (e) {
+				console.log('JSON parse error:', e);
+				return;
+			}
+
+			try {
 				//ORDER DONE
-				if (data.orderId) {
+				if (jsonData.orderId > 0) {
 					request_processor("GET", "/trading/get_model", { "models": "OpenPosition" })
 					console.log("orderDone: " + response.statusCode + " " + data)
 				}
-
-				//GET orders
-				if (data.open_positions.length > 0) {
-					console.log("ORDERS OPEN: " + data.open_positions.length)
-					orders = data.open_positions.length
-				}
+			} catch (error) {
+				console.log(error)
 			}
+
+			try {
+				//GET orders
+				if (jsonData.open_positions.length > 0) {
+					console.log("ORDERS OPEN: " + jsonData.open_positions.length)
+					orders = jsonData.open_positions.length
+				}
+			} catch (error) {
+				console.log(error)
+			}
+
 		});
 	}).on('error', (err) => {
 		console.log(err.message)
