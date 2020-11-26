@@ -186,6 +186,7 @@ function Indicator() {
 		}
 
 	}
+	
 	console.log("ADX: " + resultADX[resultADX.length - 1].adx)
 	console.log("MACD: " + resultMACD[resultMACD.length - 1].MACD + " Histogram: " + resultMACD[resultMACD.length - 1].histogram + " Signal: " + resultMACD[resultMACD.length - 1].signal);
 }
