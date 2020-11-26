@@ -9,6 +9,4 @@
 
 load {"filename":"liveprices.js"}
 
-
-
 price_subscribe {"pairs":"EUR/USD"}

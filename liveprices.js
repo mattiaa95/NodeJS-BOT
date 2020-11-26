@@ -7,6 +7,7 @@ var close = []
 var config = require('./config.js');
 
 var tradinghttp = require(config.trading_api_proto);
+var querystring = require('querystring');
 
 var headers = {
 	'User-Agent': 'request',
@@ -170,23 +171,23 @@ function Indicator(jsonData) {
 		request_processor("POST","/trading/open_trade",{ 
 			"account_id": config.accountID, 
 			"symbol": "EUR/USD", 
-			"is_buy":false,
+			"is_buy": false,
 			"at_market": 0,
 			"order_type": "AtMarket",
-			"stop": (parseFloat(jsonData.Rates[0])*0.002),
+			"stop": (parseFloat(jsonData.Rates[0])*0.01),
 			"limit": (parseFloat(jsonData.Rates[0])-(parseFloat(jsonData.Rates[0])*0.002)),
-			"amount":10,
+			"amount": 10,
 			"time_in_force":"GTC" })
 	} else {
 		request_processor("POST","/trading/open_trade",
-		{ "account_id": config.accountID, 
+		{"account_id": config.accountID, 
 			"symbol": "EUR/USD", 
-			"is_buy":true,
+			"is_buy": true,
 			"at_market": 0,
 			"order_type": "AtMarket",
-			"stop": (parseFloat(jsonData.Rates[1])-(parseFloat(jsonData.Rates[1])*0.002)),
+			"stop": (parseFloat(jsonData.Rates[1])-(parseFloat(jsonData.Rates[1])*0.01)),
 			"limit": (parseFloat(jsonData.Rates[1])*0.002),
-			"amount":10,
+			"amount": 10,
 			"time_in_force":"GTC" })
 	}
 	   
@@ -194,14 +195,14 @@ function Indicator(jsonData) {
 }
 
 function request_processor(method, resource, params) {
+	console.log(params.is_buy)
 	var req = tradinghttp.request({
 			host: config.trading_api_host,
 			port: config.trading_api_port,
 			path: resource,
 			method: method,
-			headers: headers,
-			params: params
-		}, (response) => {
+			headers: headers
+			}, (response) => {
 			var data = '';
 			response.on('data', (chunk) => data += chunk); // re-assemble fragmented response data
 			response.on('end', () => {
@@ -211,6 +212,9 @@ function request_processor(method, resource, params) {
 			console.log(err.message)
 		});
 
+		if (method !== "GET" && typeof(params) !== 'undefined') {
+			req.write(querystring.stringify(params));
+		}
 
 	req.end();
 };

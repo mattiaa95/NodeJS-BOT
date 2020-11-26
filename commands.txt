@@ -15,7 +15,7 @@ send { "method":"POST", "resource":"/trading/update_subscriptions", "params": { 
 
 
 // open a position with market order
-send { "method":"POST", "resource":"/trading/open_trade", "params": { "account_id": "01260724","symbol": "EUR/USD","is_buy":true,"at_market": 0,"order_type": "AtMarket","limit": 100,"is_in_pips":true,"amount":10,"time_in_force":"GTC" } }
+send { "method":"POST", "resource":"/trading/open_trade", "params": { "account_id": "01260724","is_buy": true,"symbol": "EUR/USD","amount": 10,"at_market": 0,"order_type": "AtMarket","stop": 1.1936600,"limit": 1.1936600,"time_in_force":"GTC" } }
 
 send { "method":"POST", "resource":"/trading/open_trade", "params": { "account_id":"1027808", "symbol":"EUR/USD", "is_buy":true, "amount":10, "time_in_force":"FOK" } }
 
