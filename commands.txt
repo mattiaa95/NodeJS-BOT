@@ -15,7 +15,8 @@ send { "method":"POST", "resource":"/trading/update_subscriptions", "params": { 
 
 
 // open a position with market order
-send { "method":"POST", "resource":"/trading/open_trade", "params": { "account_id":"1027808", "symbol":"EUR/USD", "is_buy":true, "amount":1, "time_in_force":"FOK" } }
+send { "method":"POST", "resource":"/trading/open_trade", "params": { "account_id": "01260724","symbol": "EUR/USD","is_buy":true,"at_market": 0,"order_type": "AtMarket","limit": 100,"is_in_pips":true,"amount":10,"time_in_force":"GTC" } }
+
 send { "method":"POST", "resource":"/trading/open_trade", "params": { "account_id":"1027808", "symbol":"EUR/USD", "is_buy":true, "amount":10, "time_in_force":"FOK" } }
 
 // close a position with market order
@@ -39,10 +40,13 @@ send { "method":"GET", "resource":"/candles/1/d1", "params": { "num":1, "from":1
 
 
 
---- Live Prices module ---
+--- Live Prices module Start Bot ---
 load {"filename":"liveprices.js"}
 
 price_subscribe {"pairs":"EUR/USD"}
+
+
+
 price_subscribe {"pairs":"TSLA.us"}
 price_subscribe {"pairs":["GBP/USD","USD/JPY"]}
 price_unsubscribe {"pairs":["EUR/USD","GBP/USD","USD/JPY"]}

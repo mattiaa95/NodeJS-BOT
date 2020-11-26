@@ -119,18 +119,6 @@ exports.init = (c, s, h) => {
 		cli = c;
 		socket = s;
 		headers = h;
-		request_processor("POST","/trading/open_trade",{ 
-			"account_id": config.accountID, 
-			"symbol": "EUR/USD", 
-			"is_buy":true,
-			"at_market": 0,
-			"order_type": "AtMarket",
-			"stop": 30,
-			"limit": 60,
-			"is_in_pips":true,
-			"amount":1,
-			"time_in_force":"GTC" })
-
 		setupCLI();
 	}
 	initdone = true;
@@ -161,14 +149,14 @@ function ProcessDataOnUpdate(jsonData) {
 		console.log("Recolecting data Wait... " + close.length);
 	} else {
 		close.shift();
-		Indicator();
+		Indicator(jsonData);
 	}
 
 	console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates}`);
 
 }
 
-function Indicator() {
+function Indicator(jsonData) {
 	let resultMACD = MACD.calculate({
 		values: close,
 		fastPeriod: 9,
@@ -185,22 +173,20 @@ function Indicator() {
 			"is_buy":false,
 			"at_market": 0,
 			"order_type": "AtMarket",
-			"stop": 30,
-			"limit": 60,
-			"is_in_pips":true,
-			"amount":1,
+			"stop": (parseFloat(jsonData.Rates[0])*0.002),
+			"limit": (parseFloat(jsonData.Rates[0])-(parseFloat(jsonData.Rates[0])*0.002)),
+			"amount":10,
 			"time_in_force":"GTC" })
 	} else {
-		request_processor("POST","/trading/open_trade",{ 
-			"account_id": config.accountID, 
+		request_processor("POST","/trading/open_trade",
+		{ "account_id": config.accountID, 
 			"symbol": "EUR/USD", 
 			"is_buy":true,
 			"at_market": 0,
 			"order_type": "AtMarket",
-			"stop": 30,
-			"limit": 60,
-			"is_in_pips":true,
-			"amount":1,
+			"stop": (parseFloat(jsonData.Rates[1])-(parseFloat(jsonData.Rates[1])*0.002)),
+			"limit": (parseFloat(jsonData.Rates[1])*0.002),
+			"amount":10,
 			"time_in_force":"GTC" })
 	}
 	   
@@ -219,12 +205,12 @@ function request_processor(method, resource, params) {
 			var data = '';
 			response.on('data', (chunk) => data += chunk); // re-assemble fragmented response data
 			response.on('end', () => {
-				console.log("order ---- done")
+				console.log("orderDone: " + response.statusCode +" "+ data)
 			});
 		}).on('error', (err) => {
 			console.log(err.message)
 		});
 
-		
+
 	req.end();
 };
