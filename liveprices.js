@@ -146,7 +146,7 @@ function Indicator() {
 		close: close,
 		high: buy,
 		low: sell,
-		period: 5
+		period: 10
 	});
 
 	let resultRSI = RSI.calculate({
@@ -160,7 +160,7 @@ function Indicator() {
 
 	if (orders < MaxOrders) {
 		//
-		if (resultRSI[resultRSI.length - 1] >= 35 && resultRSI[resultRSI.length - 1] <= 55) {
+		if (resultRSI[resultRSI.length - 1] <= 35 && resultRSI[resultRSI.length - 1] >= 55) {
 			if (resultADX[resultADX.length - 1].adx >= 30 && resultADX[resultADX.length - 1].adx <= 45) {
 				if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
 					request_processor("POST", "/trading/open_trade", {
@@ -171,7 +171,7 @@ function Indicator() {
 						"order_type": "AtMarket",
 						"is_in_pips": true,
 						"stop": -2,
-						"limit": 1.5,
+						"limit": 2.5,
 						"amount": 10,
 						"time_in_force": "GTC"
 					})
@@ -185,7 +185,7 @@ function Indicator() {
 							"order_type": "AtMarket",
 							"is_in_pips": true,
 							"stop": -2,
-							"limit": 1.5,
+							"limit": 2.5,
 							"amount": 10,
 							"time_in_force": "GTC"
 						})
