@@ -3,6 +3,7 @@
 //
 const MACD = require('technicalindicators').MACD;
 const ADX = require('technicalindicators').ADX;
+const RSI = require('technicalindicators').RSI;
 const TICKSave = 120;
 const MaxOrders = 5;
 var close = []
@@ -145,48 +146,55 @@ function Indicator() {
 		close: close,
 		high: buy,
 		low: sell,
-		period: 10
+		period: 5
 	});
 
-	if(orders == MaxOrders){
+	let resultRSI = RSI.calculate({
+		values: close,
+		period: 5
+	});
+
+	if (orders == MaxOrders) {
 		request_processor("GET", "/trading/get_model", { "models": "OpenPosition" })
 	}
 
 	if (orders < MaxOrders) {
 		//
-		if (resultADX[resultADX.length - 1].adx >= 30 && resultADX[resultADX.length - 1].adx <= 50) {
-			if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
-				request_processor("POST", "/trading/open_trade", {
-					"account_id": config.accountID,
-					"symbol": "EUR/USD",
-					"is_buy": false,
-					"at_market": 0,
-					"order_type": "AtMarket",
-					"is_in_pips": true,
-					"stop": -1.5,
-					"limit": 2.5,
-					"amount": 10,
-					"time_in_force": "GTC"
-				})
-			} else {
-				request_processor("POST", "/trading/open_trade",
-					{
+		if (resultRSI[resultRSI.length - 1] >= 35 && resultRSI[resultRSI.length - 1] <= 55) {
+			if (resultADX[resultADX.length - 1].adx >= 30 && resultADX[resultADX.length - 1].adx <= 45) {
+				if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
+					request_processor("POST", "/trading/open_trade", {
 						"account_id": config.accountID,
 						"symbol": "EUR/USD",
-						"is_buy": true,
+						"is_buy": false,
 						"at_market": 0,
 						"order_type": "AtMarket",
 						"is_in_pips": true,
-						"stop": -1.5,
-						"limit": 2.5,
+						"stop": -2,
+						"limit": 1.5,
 						"amount": 10,
 						"time_in_force": "GTC"
 					})
+				} else {
+					request_processor("POST", "/trading/open_trade",
+						{
+							"account_id": config.accountID,
+							"symbol": "EUR/USD",
+							"is_buy": true,
+							"at_market": 0,
+							"order_type": "AtMarket",
+							"is_in_pips": true,
+							"stop": -2,
+							"limit": 1.5,
+							"amount": 10,
+							"time_in_force": "GTC"
+						})
+				}
 			}
 		}
-
 	}
-	
+
+	console.log("RSI: " + resultRSI[resultRSI.length - 1])
 	console.log("ADX: " + resultADX[resultADX.length - 1].adx)
 	console.log("MACD: " + resultMACD[resultMACD.length - 1].MACD + " Histogram: " + resultMACD[resultMACD.length - 1].histogram + " Signal: " + resultMACD[resultMACD.length - 1].signal);
 }
@@ -227,7 +235,7 @@ function request_processor(method, resource, params) {
 					}
 				}
 			}
-			
+
 		});
 	}).on('error', (err) => {
 		console.log(err.message)
