@@ -44,7 +44,9 @@ load {"filename":"liveprices.js"}
 
 price_subscribe {"pairs":"EUR/USD"}
 
+price_subscribe {"pairs":"GBP/USD"}
 
+price_subscribe {"pairs":"USD/JPY"}
 
 price_subscribe {"pairs":"TSLA.us"}
 price_subscribe {"pairs":["GBP/USD","USD/JPY"]}
