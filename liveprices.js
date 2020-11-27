@@ -158,12 +158,7 @@ function Indicator() {
 		period: RSIperiod
 	});
 
-	if (orders == MaxOrders) {
-		request_processor("GET", "/trading/get_model", { "models": "OpenPosition" })
-	}
-
 	if (orders < MaxOrders) {
-		//
 		if (resultRSI[resultRSI.length - 1] <= RSIminLine || resultRSI[resultRSI.length - 1] >= RSImaxLine) {
 			if (resultADX[resultADX.length - 1].adx >= ADXmin && resultADX[resultADX.length - 1].adx <= ADXmax) {
 				if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
@@ -198,6 +193,8 @@ function Indicator() {
 				}
 			}
 		}
+	}else{
+		request_processor("GET", "/trading/get_model", { "models": "OpenPosition" })
 	}
 
 	console.log("RSI: " + resultRSI[resultRSI.length - 1])
