@@ -1,7 +1,7 @@
 const TICKSave = 120; //Ticks que guarda antes de operar
 exports.TICKSave = TICKSave;
 
-const MaxOrders = 5; //Ordenes maximas abiertas simultaneamente, abre 1 cada tick maximo en el caso de no haber ninguna
+const MaxOrders = 25; //Ordenes maximas abiertas simultaneamente, abre 1 cada tick maximo en el caso de no haber ninguna
 exports.MaxOrders = MaxOrders;
 
 const ADXperiod = 10; //ADX Period

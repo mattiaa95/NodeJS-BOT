@@ -17,7 +17,6 @@ var querystring = require('querystring');
 const { Console } = require('console');
 
 const { TICKSave, ADXperiod, MaxOrders, ADXmin, StopLossinpips, LimitGanaceinpip,SMA4Period, SMA20Period,SMADiference } = require("./TICKSave");
-const {  } = require("./SMADiference");
 
 var headers = {
 	'User-Agent': 'request',
