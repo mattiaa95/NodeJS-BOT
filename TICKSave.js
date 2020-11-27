@@ -8,7 +8,7 @@ const ADXperiod = 10; //ADX Period
 exports.ADXperiod = ADXperiod;
 
 //Example with 27 - 47 only enter in 28...46
-const ADXmin = 30; //min adx entrance
+const ADXmin = 35; //min adx entrance
 exports.ADXmin = ADXmin;
 
 //Order config

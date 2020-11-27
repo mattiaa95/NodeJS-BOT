@@ -151,7 +151,7 @@ function Indicator() {
 
 	if (orders < MaxOrders) {
 			if (resultADX[resultADX.length - 1].adx >= ADXmin) {
-				if (resultSMA4[resultSMA4.length - 1] < ((resultSMA20[resultSMA20.length - 1])*SMADiference)) {
+				if (resultSMA4[resultSMA4.length - 1] > ((resultSMA20[resultSMA20.length - 1])*SMADiference)) {
 					console.log("Make Sell trade")
 					request_processor("POST", "/trading/open_trade", {
 						"account_id": config.accountID,
