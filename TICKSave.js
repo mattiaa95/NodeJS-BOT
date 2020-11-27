@@ -12,10 +12,10 @@ const ADXmin = 25; //min adx entrance
 exports.ADXmin = ADXmin;
 
 //Order config
-const StopLossinpips = -2.8; //stop loss in pips
+const StopLossinpips = -1.75; //stop loss in pips
 exports.StopLossinpips = StopLossinpips;
 
-const LimitGanaceinpip = 4; //limit win in pips
+const LimitGanaceinpip = 2.5; //limit win in pips
 exports.LimitGanaceinpip = LimitGanaceinpip;
 
 const SMA4Period = 4;
