@@ -160,7 +160,8 @@ function Indicator() {
 						"at_market": 0,
 						"order_type": "AtMarket",
 						"is_in_pips": true,
-						"stop": StopLossinpips + spread,
+						"trailing_step": 0.1,
+						"stop": StopLossinpips + -(spread),
 						"limit": LimitGanaceinpip + spread,
 						"amount": 10,
 						"time_in_force": "GTC"
@@ -175,7 +176,8 @@ function Indicator() {
 							"at_market": 0,
 							"order_type": "AtMarket",
 							"is_in_pips": true,
-							"stop": StopLossinpips + spread,
+							"trailing_step": 0.1, // 1 - for dynamic --- 10 or above - for fixed trailing stop
+							"stop": StopLossinpips + -(spread),
 							"limit": LimitGanaceinpip + spread,
 							"amount": 10,
 							"time_in_force": "GTC"
