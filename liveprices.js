@@ -164,9 +164,10 @@ function Indicator() {
 
 	if (orders < MaxOrders) {
 		//
-		if (resultRSI[resultRSI.length - 1] <= RSIminLine && resultRSI[resultRSI.length - 1] >= RSImaxLine) {
+		if (resultRSI[resultRSI.length - 1] <= RSIminLine || resultRSI[resultRSI.length - 1] >= RSImaxLine) {
 			if (resultADX[resultADX.length - 1].adx >= ADXmin && resultADX[resultADX.length - 1].adx <= ADXmax) {
 				if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
+					console.log("Make Sell trade")
 					request_processor("POST", "/trading/open_trade", {
 						"account_id": config.accountID,
 						"symbol": pair,
@@ -180,6 +181,7 @@ function Indicator() {
 						"time_in_force": "GTC"
 					})
 				} else {
+					console.log("Make Buy trade")
 					request_processor("POST", "/trading/open_trade",
 						{
 							"account_id": config.accountID,
@@ -204,7 +206,6 @@ function Indicator() {
 }
 
 function request_processor(method, resource, params) {
-	console.log("Making ORDER")
 	orders = orders + 1
 	// GET HTTP(S) requests have parameters encoded in URL
 	if (method === "GET") {
