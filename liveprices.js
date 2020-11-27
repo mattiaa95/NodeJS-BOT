@@ -4,8 +4,6 @@
 const MACD = require('technicalindicators').MACD;
 const ADX = require('technicalindicators').ADX;
 const RSI = require('technicalindicators').RSI;
-const TICKSave = 120;
-const MaxOrders = 10;
 
 var close = []
 var sell = []
@@ -18,6 +16,7 @@ var pair = ""
 var tradinghttp = require(config.trading_api_proto);
 var querystring = require('querystring');
 const { Console } = require('console');
+const { TICKSave, ADXperiod, RSIperiod, MaxOrders, RSIminLine, RSImaxLine, ADXmin, ADXmax, StopLossinpips, LimitGanaceinpip } = require("./TICKSave");
 
 var headers = {
 	'User-Agent': 'request',
@@ -137,6 +136,7 @@ function ProcessDataOnUpdate(jsonData) {
 }
 
 function Indicator() {
+
 	let resultMACD = MACD.calculate({
 		values: close,
 		fastPeriod: 9,
@@ -150,12 +150,12 @@ function Indicator() {
 		close: close,
 		high: buy,
 		low: sell,
-		period: 10
+		period: ADXperiod
 	});
 
 	let resultRSI = RSI.calculate({
 		values: close,
-		period: 2
+		period: RSIperiod
 	});
 
 	if (orders == MaxOrders) {
@@ -164,8 +164,8 @@ function Indicator() {
 
 	if (orders < MaxOrders) {
 		//
-		if (resultRSI[resultRSI.length - 1] <= 40 && resultRSI[resultRSI.length - 1] >= 60) {
-			if (resultADX[resultADX.length - 1].adx >= 30 && resultADX[resultADX.length - 1].adx <= 45) {
+		if (resultRSI[resultRSI.length - 1] <= RSIminLine && resultRSI[resultRSI.length - 1] >= RSImaxLine) {
+			if (resultADX[resultADX.length - 1].adx >= ADXmin && resultADX[resultADX.length - 1].adx <= ADXmax) {
 				if ((resultMACD[resultMACD.length - 1].MACD) < (resultMACD[resultMACD.length - 1].signal)) {
 					request_processor("POST", "/trading/open_trade", {
 						"account_id": config.accountID,
@@ -174,8 +174,8 @@ function Indicator() {
 						"at_market": 0,
 						"order_type": "AtMarket",
 						"is_in_pips": true,
-						"stop": -2,
-						"limit": 2.5,
+						"stop": StopLossinpips,
+						"limit": LimitGanaceinpip,
 						"amount": 10,
 						"time_in_force": "GTC"
 					})
@@ -188,8 +188,8 @@ function Indicator() {
 							"at_market": 0,
 							"order_type": "AtMarket",
 							"is_in_pips": true,
-							"stop": -2,
-							"limit": 2.5,
+							"stop": StopLossinpips,
+							"limit": LimitGanaceinpip,
 							"amount": 10,
 							"time_in_force": "GTC"
 						})
