@@ -1,9 +1,8 @@
 //
 // begin setup CLI
 //
-const MACD = require('technicalindicators').MACD;
+const SMA = require('technicalindicators').SMA;
 const ADX = require('technicalindicators').ADX;
-const RSI = require('technicalindicators').RSI;
 
 var close = []
 var sell = []
@@ -16,7 +15,9 @@ var pair = ""
 var tradinghttp = require(config.trading_api_proto);
 var querystring = require('querystring');
 const { Console } = require('console');
-const { TICKSave, ADXperiod, RSIperiod, MaxOrders, RSIminLine, RSImaxLine, ADXmin, ADXmax, StopLossinpips, LimitGanaceinpip } = require("./TICKSave");
+
+const { TICKSave, ADXperiod, MaxOrders, ADXmin, StopLossinpips, LimitGanaceinpip,SMA4Period, SMA20Period,SMADiference } = require("./TICKSave");
+const {  } = require("./SMADiference");
 
 var headers = {
 	'User-Agent': 'request',
@@ -135,16 +136,11 @@ function ProcessDataOnUpdate(jsonData) {
 
 }
 
+
 function Indicator() {
 
-	let resultMACD = MACD.calculate({
-		values: close,
-		fastPeriod: 9,
-		slowPeriod: 20,
-		signalPeriod: 3,
-		SimpleMAOscillator: false,
-		SimpleMASignal: false
-	});
+	let resultSMA4 = SMA.calculate({period : SMA4Period, values : close});
+	let resultSMA20 = SMA.calculate({period : SMA20Period, values : close});
 
 	let resultADX = ADX.calculate({
 		close: close,
@@ -153,15 +149,9 @@ function Indicator() {
 		period: ADXperiod
 	});
 
-	let resultRSI = RSI.calculate({
-		values: close,
-		period: RSIperiod
-	});
-
 	if (orders < MaxOrders) {
-		if (resultRSI[resultRSI.length - 1] <= RSIminLine || resultRSI[resultRSI.length - 1] >= RSImaxLine) {
-			if (resultADX[resultADX.length - 1].adx >= ADXmin && resultADX[resultADX.length - 1].adx <= ADXmax) {
-				if ((resultMACD[resultMACD.length - 1].MACD) > (resultMACD[resultMACD.length - 1].signal)) {
+			if (resultADX[resultADX.length - 1].adx >= ADXmin) {
+				if (resultSMA4[resultSMA4.length - 1] < ((resultSMA20[resultSMA20.length - 1])*SMADiference)) {
 					console.log("Make Sell trade")
 					request_processor("POST", "/trading/open_trade", {
 						"account_id": config.accountID,
@@ -192,14 +182,11 @@ function Indicator() {
 						})
 				}
 			}
-		}
 	}else{
 		request_processor("GET", "/trading/get_model", { "models": "OpenPosition" })
 	}
 
-	console.log("RSI: " + resultRSI[resultRSI.length - 1])
 	console.log("ADX: " + resultADX[resultADX.length - 1].adx)
-	console.log("MACD: " + resultMACD[resultMACD.length - 1].MACD + " Histogram: " + resultMACD[resultMACD.length - 1].histogram + " Signal: " + resultMACD[resultMACD.length - 1].signal);
 }
 
 function request_processor(method, resource, params) {
