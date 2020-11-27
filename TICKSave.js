@@ -24,5 +24,6 @@ exports.SMA4Period = SMA4Period;
 const SMA20Period = 20;
 exports.SMA20Period = SMA20Period;
 
-const SMADiference = 0.05;
-exports.SMADiference = SMADiference;
+const SMAAbsoluteDiference = 0.00016;
+exports.SMAAbsoluteDiference = SMAAbsoluteDiference;
+

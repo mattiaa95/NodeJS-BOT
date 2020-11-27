@@ -17,7 +17,7 @@ var tradinghttp = require(config.trading_api_proto);
 var querystring = require('querystring');
 const { Console } = require('console');
 
-const { TICKSave, ADXperiod, MaxOrders, ADXmin, StopLossinpips, LimitGanaceinpip,SMA4Period, SMA20Period,SMADiference } = require("./TICKSave");
+const { TICKSave, ADXperiod, MaxOrders, ADXmin, StopLossinpips, LimitGanaceinpip, SMA4Period, SMA20Period, SMAAbsoluteDiference } = require("./TICKSave");
 
 var headers = {
 	'User-Agent': 'request',
@@ -132,15 +132,15 @@ function ProcessDataOnUpdate(jsonData) {
 		Indicator();
 	}
 
-	spread = ((buy[buy.length - 1] - sell[sell.length - 1]).toFixed(5)*10000)
+	spread = ((buy[buy.length - 1] - sell[sell.length - 1]).toFixed(5) * 10000)
 	console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates} | Spread(pips): ${spread}`);
 }
 
 
 function Indicator() {
 
-	let resultSMA4 = SMA.calculate({period : SMA4Period, values : close});
-	let resultSMA20 = SMA.calculate({period : SMA20Period, values : close});
+	let resultSMA4 = SMA.calculate({ period: SMA4Period, values: close });
+	let resultSMA20 = SMA.calculate({ period: SMA20Period, values: close });
 
 	let resultADX = ADX.calculate({
 		close: close,
@@ -150,8 +150,9 @@ function Indicator() {
 	});
 
 	if (orders < MaxOrders) {
+		if (Math.abs(resultSMA4[resultSMA4.length - 1] - ((resultSMA20[resultSMA20.length - 1]))) < SMAAbsoluteDiference ) {
 			if (resultADX[resultADX.length - 1].adx >= ADXmin) {
-				if (resultSMA4[resultSMA4.length - 1] > ((resultSMA20[resultSMA20.length - 1])*SMADiference)) {
+				if (resultSMA4[resultSMA4.length - 1] < ((resultSMA20[resultSMA20.length - 1]))) {
 					console.log("Make Sell trade")
 					request_processor("POST", "/trading/open_trade", {
 						"account_id": config.accountID,
@@ -184,7 +185,8 @@ function Indicator() {
 						})
 				}
 			}
-	}else{
+		}
+	} else {
 		request_processor("GET", "/trading/get_model", { "models": "OpenPosition" })
 	}
 
