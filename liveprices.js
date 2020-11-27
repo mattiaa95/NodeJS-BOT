@@ -186,6 +186,8 @@ function Indicator() {
 		request_processor("GET", "/trading/get_model", { "models": "OpenPosition" })
 	}
 
+	console.log("resultSMA4: " + resultSMA4[resultSMA4.length - 1])
+	console.log("resultSMA20: " + resultSMA20[resultSMA20.length - 1])
 	console.log("ADX: " + resultADX[resultADX.length - 1].adx)
 }
 
