@@ -7,6 +7,7 @@ const ADX = require('technicalindicators').ADX;
 var close = []
 var sell = []
 var buy = []
+var spread = 1
 var orders = 0
 var config = require('./config.js');
 
@@ -113,7 +114,7 @@ exports.init = (c, s, h) => {
 function ProcessDataOnUpdate(jsonData) {
 
 	jsonData.Rates = jsonData.Rates.map(function (element) {
-		return element.toFixed(7);
+		return element.toFixed(5);
 	});
 
 	let averangePrice = ((parseFloat(jsonData.Rates[0]) + parseFloat(jsonData.Rates[1])) / 2);
@@ -131,8 +132,8 @@ function ProcessDataOnUpdate(jsonData) {
 		Indicator();
 	}
 
-	console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates}`);
-
+	spread = ((buy[buy.length - 1] - sell[sell.length - 1]).toFixed(5)*10000)
+	console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates} | Spread(pips): ${spread}`);
 }
 
 
@@ -159,8 +160,8 @@ function Indicator() {
 						"at_market": 0,
 						"order_type": "AtMarket",
 						"is_in_pips": true,
-						"stop": StopLossinpips,
-						"limit": LimitGanaceinpip,
+						"stop": StopLossinpips + spread,
+						"limit": LimitGanaceinpip + spread,
 						"amount": 10,
 						"time_in_force": "GTC"
 					})
@@ -174,8 +175,8 @@ function Indicator() {
 							"at_market": 0,
 							"order_type": "AtMarket",
 							"is_in_pips": true,
-							"stop": StopLossinpips,
-							"limit": LimitGanaceinpip,
+							"stop": StopLossinpips + spread,
+							"limit": LimitGanaceinpip + spread,
 							"amount": 10,
 							"time_in_force": "GTC"
 						})

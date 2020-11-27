@@ -8,14 +8,14 @@ const ADXperiod = 10; //ADX Period
 exports.ADXperiod = ADXperiod;
 
 //Example with 27 - 47 only enter in 28...46
-const ADXmin = 26; //min adx entrance
+const ADXmin = 30; //min adx entrance
 exports.ADXmin = ADXmin;
 
 //Order config
-const StopLossinpips = -1.75; //stop loss in pips
+const StopLossinpips = -1.5; //stop loss in pips
 exports.StopLossinpips = StopLossinpips;
 
-const LimitGanaceinpip = 3.2; //limit win in pips
+const LimitGanaceinpip = 2.5; //limit win in pips
 exports.LimitGanaceinpip = LimitGanaceinpip;
 
 const SMA4Period = 4;
@@ -24,5 +24,5 @@ exports.SMA4Period = SMA4Period;
 const SMA20Period = 20;
 exports.SMA20Period = SMA20Period;
 
-const SMADiference = 0.04;
+const SMADiference = 0.05;
 exports.SMADiference = SMADiference;
