@@ -1,13 +1,13 @@
 //
 // begin setup CLI
 //
-const MACD = require('technicalindicators').MACD;
+const SMA = require('technicalindicators').SMA;
 const ADX = require('technicalindicators').ADX;
-const RSI = require('technicalindicators').RSI;
 
 var close = []
 var sell = []
 var buy = []
+var spread = 1
 var orders = 0
 var config = require('./config.js');
 
@@ -16,7 +16,8 @@ var pair = ""
 var tradinghttp = require(config.trading_api_proto);
 var querystring = require('querystring');
 const { Console } = require('console');
-const { TICKSave, ADXperiod, RSIperiod, MaxOrders, RSIminLine, RSImaxLine, ADXmin, ADXmax, StopLossinpips, LimitGanaceinpip } = require("./TICKSave");
+
+const { TICKSave, ADXperiod, MaxOrders, ADXmin, StopLossinpips, LimitGanaceinpip, SMA4Period, SMA9Period, SMA20Period, SMAAbsoluteDiference } = require("./TICKSave");
 
 var headers = {
 	'User-Agent': 'request',
@@ -107,13 +108,10 @@ exports.init = (c, s, h) => {
 //
 
 ///MainProcess update scubscription
-
-
-///MainProcess update scubscription
 function ProcessDataOnUpdate(jsonData) {
 
 	jsonData.Rates = jsonData.Rates.map(function (element) {
-		return element.toFixed(7);
+		return element.toFixed(5);
 	});
 
 	let averangePrice = ((parseFloat(jsonData.Rates[0]) + parseFloat(jsonData.Rates[1])) / 2);
@@ -131,20 +129,16 @@ function ProcessDataOnUpdate(jsonData) {
 		Indicator();
 	}
 
-	console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates}`);
-
+	spread = ((buy[buy.length - 1] - sell[sell.length - 1]).toFixed(5) * 10000) //hace falta multiplicar para forex
+	console.log(`@${jsonData.Updated} Price update of [${jsonData.Symbol}]: ${jsonData.Rates} | Spread(pips): ${spread}`);
 }
+
 
 function Indicator() {
 
-	let resultMACD = MACD.calculate({
-		values: close,
-		fastPeriod: 9,
-		slowPeriod: 20,
-		signalPeriod: 3,
-		SimpleMAOscillator: false,
-		SimpleMASignal: false
-	});
+	let resultSMA4 = SMA.calculate({ period: SMA4Period, values: close });
+	let resultSMA9 = SMA.calculate({ period: SMA9Period, values: close });
+	let resultSMA20 = SMA.calculate({ period: SMA20Period, values: close });
 
 	let resultADX = ADX.calculate({
 		close: close,
@@ -153,15 +147,15 @@ function Indicator() {
 		period: ADXperiod
 	});
 
-	let resultRSI = RSI.calculate({
-		values: close,
-		period: RSIperiod
-	});
+	//experimental part vars
+
+	let highmedSMA = resultSMA4[resultSMA4.length - 1] > ((resultSMA20[resultSMA20.length - 1]));
+	let medlowSMA =  (resultSMA4[resultSMA4.length - 1] > ((resultSMA20[resultSMA20.length - 1])));
 
 	if (orders < MaxOrders) {
-		if (resultRSI[resultRSI.length - 1] <= RSIminLine || resultRSI[resultRSI.length - 1] >= RSImaxLine) {
-			if (resultADX[resultADX.length - 1].adx >= ADXmin && resultADX[resultADX.length - 1].adx <= ADXmax) {
-				if ((resultMACD[resultMACD.length - 1].MACD) > (resultMACD[resultMACD.length - 1].signal)) {
+		//here was SMAABSOLUTE COMPARISON
+			if ((resultADX[resultADX.length - 1].adx >= ADXmin ) && (spread < 1.25) ) {
+				if ((resultSMA4[resultSMA4.length - 1] < (resultSMA9[resultSMA9.length - 1])) && (resultSMA9[resultSMA9.length - 1]) < (resultSMA20[resultSMA20.length - 1])) {
 					console.log("Make Sell trade")
 					request_processor("POST", "/trading/open_trade", {
 						"account_id": config.accountID,
@@ -170,12 +164,13 @@ function Indicator() {
 						"at_market": 0,
 						"order_type": "AtMarket",
 						"is_in_pips": true,
-						"stop": StopLossinpips,
-						"limit": LimitGanaceinpip,
+						"trailing_step": 1.5,
+						"stop": StopLossinpips + -(spread),
+						"limit": LimitGanaceinpip + spread,
 						"amount": 10,
 						"time_in_force": "GTC"
 					})
-				} else {
+				} else if ((resultSMA4[resultSMA4.length - 1] > (resultSMA9[resultSMA9.length - 1])) && (resultSMA9[resultSMA9.length - 1]) > (resultSMA20[resultSMA20.length - 1])) {
 					console.log("Make Buy trade")
 					request_processor("POST", "/trading/open_trade",
 						{
@@ -185,21 +180,23 @@ function Indicator() {
 							"at_market": 0,
 							"order_type": "AtMarket",
 							"is_in_pips": true,
-							"stop": StopLossinpips,
-							"limit": LimitGanaceinpip,
+							"trailing_step": 0.1, // 1 - for dynamic --- 10 or above - for fixed trailing stop
+							"stop": StopLossinpips + -(spread),
+							"limit": LimitGanaceinpip + spread,
 							"amount": 10,
 							"time_in_force": "GTC"
 						})
 				}
 			}
-		}
-	}else{
+		
+	} else {
 		request_processor("GET", "/trading/get_model", { "models": "OpenPosition" })
 	}
 
-	console.log("RSI: " + resultRSI[resultRSI.length - 1])
+	console.log("resultSMA4: " + resultSMA4[resultSMA4.length - 1])
+	console.log("resultSMA9: " + resultSMA9[resultSMA9.length - 1])
+	console.log("resultSMA20: " + resultSMA20[resultSMA20.length - 1])
 	console.log("ADX: " + resultADX[resultADX.length - 1].adx)
-	console.log("MACD: " + resultMACD[resultMACD.length - 1].MACD + " Histogram: " + resultMACD[resultMACD.length - 1].histogram + " Signal: " + resultMACD[resultMACD.length - 1].signal);
 }
 
 function request_processor(method, resource, params) {
